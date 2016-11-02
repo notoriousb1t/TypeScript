@@ -114,7 +114,6 @@ namespace ts {
         const unionTypes = createMap<UnionType>();
         const intersectionTypes = createMap<IntersectionType>();
         const spreadTypes = createMap<SpreadType>();
-        const differenceTypes = createMap<DifferenceType>();
         const stringLiteralTypes = createMap<LiteralType>();
         const numericLiteralTypes = createMap<LiteralType>();
         const evolvingArrayTypes: EvolvingArrayType[] = [];
@@ -2248,9 +2247,6 @@ namespace ts {
                     else if (type.flags & TypeFlags.Spread) {
                         writeSpreadType(type as SpreadType);
                     }
-                    else if (type.flags & TypeFlags.Difference) {
-                        writeDifferenceType(type as DifferenceType, nextFlags);
-                    }
                     else if (getObjectFlags(type) & ObjectFlags.Anonymous) {
                         writeAnonymousType(<ObjectType>type, nextFlags);
                     }
@@ -2408,34 +2404,6 @@ namespace ts {
                     }
                 }
 
-                function writeDifferenceType(type: DifferenceType, flags: TypeFormatFlags) {
-                    if (flags & TypeFormatFlags.InElementType) {
-                        writePunctuation(writer, SyntaxKind.OpenParenToken);
-                    }
-                    writeType(type.source, flags);
-                    writeSpace(writer);
-                    writePunctuation(writer, SyntaxKind.MinusToken);
-                    writeSpace(writer);
-                    writePunctuation(writer, SyntaxKind.OpenParenToken);
-                    writeSpace(writer);
-                    let first = true;
-                    for (const property of type.properties) {
-                        if (first) {
-                            first = false;
-                        }
-                        else {
-                            writePunctuation(writer, SyntaxKind.CommaToken);
-                            writeSpace(writer);
-                        }
-                        writer.writeParameter(getTextOfPropertyName(property));
-                    }
-                    writeSpace(writer);
-                    writePunctuation(writer, SyntaxKind.CloseParenToken);
-
-                    if (flags & TypeFormatFlags.InElementType) {
-                        writePunctuation(writer, SyntaxKind.CloseParenToken);
-                    }
-                }
                 function writeAnonymousType(type: ObjectType, flags: TypeFormatFlags) {
                     const symbol = type.symbol;
                     if (symbol) {
@@ -3064,47 +3032,25 @@ namespace ts {
             return name.kind === SyntaxKind.ComputedPropertyName && !isStringOrNumericLiteral((<ComputedPropertyName>name).expression.kind);
         }
 
-        function getRestType(source: Type, properties: PropertyName[], symbol: Symbol, aliasSymbol?: Symbol, aliasTypeArguments?: Type[]): Type {
-            if (source.flags & TypeFlags.Intersection) {
-                return getIntersectionType(map((source as IntersectionType).types, t => getRestType(t, properties, symbol, aliasSymbol, aliasTypeArguments)), aliasSymbol, aliasTypeArguments);
+        function getRestType(source: Type, properties: PropertyName[], symbol: Symbol): Type {
+            Debug.assert(!!(source.flags & TypeFlags.Object), "Rest types only support object types right now.");
+            const members = createMap<Symbol>();
+            const names = createMap<true>();
+            for (const name of properties) {
+                names[getTextOfPropertyName(name)] = true;
             }
-            if (source.flags & TypeFlags.Union) {
-                return getUnionType(map((source as UnionType).types, t => getRestType(t, properties, symbol, aliasSymbol, aliasTypeArguments)), /*subtypeReduction*/ false, aliasSymbol, aliasTypeArguments);
-            }
-            // TODO: Distribute across spread and partial?
-            // spread is inescapable, so perhaps not, although we still want to give the right answers for constrained type parameters
-            const id = source.id.toString() + "-" + properties.map(getTextOfPropertyName).join(",");
-            if (id in differenceTypes) {
-                return differenceTypes[id];
-            }
-
-            // TODO: Simplifications
-            if (source.flags & TypeFlags.Object) {
-                const members = createMap<Symbol>();
-                const names = createMap<true>();
-                for (const name of properties) {
-                    names[getTextOfPropertyName(name)] = true;
+            for (const prop of getPropertiesOfType(source)) {
+                const inNamesToRemove = prop.name in names;
+                const isPrivate = getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected);
+                const isMethod = prop.flags & SymbolFlags.Method;
+                const isSetOnlyAccessor = prop.flags & SymbolFlags.SetAccessor && !(prop.flags & SymbolFlags.GetAccessor);
+                if (!inNamesToRemove && !isPrivate && !isMethod && !isSetOnlyAccessor) {
+                    members[prop.name] = prop;
                 }
-                for (const prop of getPropertiesOfType(source)) {
-                    const inNamesToRemove = prop.name in names;
-                    const isPrivate = getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected);
-                    const isMethod = prop.flags & SymbolFlags.Method;
-                    const isSetOnlyAccessor = prop.flags & SymbolFlags.SetAccessor && !(prop.flags & SymbolFlags.GetAccessor);
-                    if (!inNamesToRemove && !isPrivate && !isMethod && !isSetOnlyAccessor) {
-                        members[prop.name] = prop;
-                    }
-                }
-                const stringIndexInfo = getIndexInfoOfType(source, IndexKind.String);
-                const numberIndexInfo = getIndexInfoOfType(source, IndexKind.Number);
-                return createAnonymousType(symbol, members, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo);
             }
-            const difference = differenceTypes[id] = createType(TypeFlags.Difference) as DifferenceType;
-            difference.symbol = symbol;
-            difference.source = source;
-            difference.properties = properties;
-            difference.aliasSymbol = aliasSymbol;
-            difference.aliasTypeArguments = aliasTypeArguments;
-            return difference;
+            const stringIndexInfo = getIndexInfoOfType(source, IndexKind.String);
+            const numberIndexInfo = getIndexInfoOfType(source, IndexKind.Number);
+            return createAnonymousType(symbol, members, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo);
         }
 
         /** Return the inferred type for a binding element */
@@ -4641,10 +4587,6 @@ namespace ts {
             return getApparentType(type.right);
         }
 
-        function getApparentTypeOfDifference(type: DifferenceType) {
-            return getRestType(getApparentType(type.source), type.properties, type.symbol);
-        }
-
         /**
          * For a type parameter, return the base constraint of the type parameter. For the string, number,
          * boolean, and symbol primitive types, return the corresponding object types. Otherwise return the
@@ -4653,7 +4595,6 @@ namespace ts {
         function getApparentType(type: Type): Type {
             let t = type.flags & TypeFlags.TypeParameter ? getApparentTypeOfTypeParameter(<TypeParameter>type) : type;
             t = t.flags & TypeFlags.Spread ? getApparentTypeOfSpread(type as SpreadType) : t;
-            t = t.flags & TypeFlags.Difference ? getApparentTypeOfDifference(type as DifferenceType) : t;
             return t.flags & TypeFlags.StringLike ? globalStringType :
                 t.flags & TypeFlags.NumberLike ? globalNumberType :
                 t.flags & TypeFlags.BooleanLike ? globalBooleanType :
@@ -5850,15 +5791,6 @@ namespace ts {
             return links.resolvedType;
         }
 
-        function getTypeFromDifferenceTypeNode(node: DifferenceTypeNode, aliasSymbol?: Symbol, aliasTypeArguments?: Type[]): Type {
-            const links = getNodeLinks(node);
-            if (!links.resolvedType) {
-                const source = getTypeFromTypeNodeNoAlias(node.source);
-                links.resolvedType = getRestType(source, node.properties, node.symbol, aliasSymbol, aliasTypeArguments);
-            }
-            return links.resolvedType;
-        }
-
         function getIndexTypeForTypeParameter(type: TypeParameter) {
             if (!type.resolvedIndexType) {
                 type.resolvedIndexType = <IndexType>createType(TypeFlags.Index);
@@ -6181,10 +6113,10 @@ namespace ts {
             }
             const spread = spreadTypes[id] = createType(TypeFlags.Spread) as SpreadType;
             Debug.assert(!!(left.flags & (TypeFlags.Spread | TypeFlags.Object)), "Left flags: " + left.flags.toString(2));
-            Debug.assert(!!(right.flags & (TypeFlags.TypeParameter | TypeFlags.Intersection | TypeFlags.Index | TypeFlags.IndexedAccess | TypeFlags.Difference | TypeFlags.Object)), "Right flags: " + right.flags.toString(2));
+            Debug.assert(!!(right.flags & (TypeFlags.TypeParameter | TypeFlags.Intersection | TypeFlags.Index | TypeFlags.IndexedAccess | TypeFlags.Object)), "Right flags: " + right.flags.toString(2));
             spread.symbol = symbol;
             spread.left = left as SpreadType | ResolvedType;
-            spread.right = right as TypeParameter | IntersectionType | IndexType | IndexedAccessType | DifferenceType | ResolvedType;
+            spread.right = right as TypeParameter | IntersectionType | IndexType | IndexedAccessType | ResolvedType;
             spread.aliasSymbol = aliasSymbol;
             spread.aliasTypeArguments = aliasTypeArguments;
             return spread;
@@ -6336,8 +6268,6 @@ namespace ts {
                     return getTypeFromUnionTypeNode(<UnionTypeNode>node, aliasSymbol, aliasTypeArguments);
                 case SyntaxKind.IntersectionType:
                     return getTypeFromIntersectionTypeNode(<IntersectionTypeNode>node, aliasSymbol, aliasTypeArguments);
-                case SyntaxKind.DifferenceType:
-                    return getTypeFromDifferenceTypeNode(node as DifferenceTypeNode, aliasSymbol, aliasTypeArguments);
                 case SyntaxKind.ParenthesizedType:
                 case SyntaxKind.JSDocNullableType:
                 case SyntaxKind.JSDocNonNullableType:
@@ -6624,10 +6554,6 @@ namespace ts {
                 if (type.flags & TypeFlags.Spread) {
                     const spread = type as SpreadType;
                     return getSpreadType(instantiateType(spread.left, mapper), instantiateType(spread.right, mapper), type.symbol, type.aliasSymbol, mapper.targetTypes);
-                }
-                if (type.flags & TypeFlags.Difference) {
-                    const diff = type as DifferenceType;
-                    return getRestType(instantiateType(diff.source, mapper), diff.properties, type.symbol, type.aliasSymbol, mapper.targetTypes);
                 }
                 if (type.flags & TypeFlags.Index) {
                     return getIndexType(instantiateType((<IndexType>type).type, mapper));
@@ -7191,21 +7117,6 @@ namespace ts {
                     const apparentSource = getApparentType(source);
                     if (result = objectTypeRelatedTo(apparentSource, source, getApparentType(target), reportStructuralErrors)) {
                         errorInfo = saveErrorInfo;
-                        return result;
-                    }
-                }
-
-                if (source.flags & TypeFlags.Difference & target.flags & TypeFlags.Difference) {
-                    const ds = source as DifferenceType;
-                    const dt = target as DifferenceType;
-                    if (result = isRelatedTo(ds.source, dt.source)) {
-                        return result;
-                    }
-                }
-                if (target.flags & TypeFlags.Difference) {
-                    // the source may be related to target's source.
-                    // This is allowed because target is basically the same as target.source, but smaller
-                    if (result = isRelatedTo(source, (target as DifferenceType).source)) {
                         return result;
                     }
                 }

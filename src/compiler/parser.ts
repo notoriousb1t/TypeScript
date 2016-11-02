@@ -137,9 +137,6 @@ namespace ts {
             case SyntaxKind.UnionType:
             case SyntaxKind.IntersectionType:
                 return visitNodes(cbNodes, (<UnionOrIntersectionTypeNode>node).types);
-            case SyntaxKind.DifferenceType:
-                return visitNode(cbNode, (node as DifferenceTypeNode).source) ||
-                    visitNodes(cbNodes, (node as DifferenceTypeNode).properties);
             case SyntaxKind.ParenthesizedType:
             case SyntaxKind.TypeOperator:
                 return visitNode(cbNode, (<ParenthesizedTypeNode | TypeOperatorNode>node).type);
@@ -2571,30 +2568,6 @@ namespace ts {
             return type;
         }
 
-        function parsePropertyNameObject() {
-            parseExpected(SyntaxKind.OpenParenToken);
-            const list = parseDelimitedList(ParsingContext.RestProperties, parsePropertyName);
-            parseExpected(SyntaxKind.CloseParenToken);
-            return list;
-        }
-
-        function parseDifferenceTypeOrHigher(): TypeNode {
-            let leftType = parseArrayTypeOrHigher();
-            // create left-associative difference types as long as the parser sees `-`
-            while (token() === SyntaxKind.MinusToken) {
-                parseTokenNode();
-                leftType = makeDifferenceType(leftType, parsePropertyNameObject());
-            }
-            return leftType;
-        }
-
-        function makeDifferenceType(source: TypeNode, properties: NodeArray<PropertyName>) {
-            const node = createNode(SyntaxKind.DifferenceType, source.pos) as DifferenceTypeNode;
-            node.source = source;
-            node.properties = properties;
-            return finishNode(node);
-        }
-
         function parseTypeOperator(operator: SyntaxKind.KeyOfKeyword) {
             const node = <TypeOperatorNode>createNode(SyntaxKind.TypeOperator);
             parseExpected(operator);
@@ -2608,7 +2581,7 @@ namespace ts {
                 case SyntaxKind.KeyOfKeyword:
                     return parseTypeOperator(SyntaxKind.KeyOfKeyword);
             }
-            return parseDifferenceTypeOrHigher();
+            return parseArrayTypeOrHigher();
         }
 
         function parseUnionOrIntersectionType(kind: SyntaxKind, parseConstituentType: () => TypeNode, operator: SyntaxKind): TypeNode {

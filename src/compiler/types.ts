@@ -215,7 +215,6 @@ namespace ts {
         TupleType,
         UnionType,
         IntersectionType,
-        DifferenceType,
         ParenthesizedType,
         ThisType,
         TypeOperator,
@@ -893,12 +892,6 @@ namespace ts {
 
     export interface IntersectionTypeNode extends UnionOrIntersectionTypeNode {
         kind: SyntaxKind.IntersectionType;
-    }
-
-    export interface DifferenceTypeNode extends TypeNode {
-        kind: SyntaxKind.DifferenceType;
-        source: TypeNode;
-        properties: NodeArray<PropertyName>;
     }
 
     export interface ParenthesizedTypeNode extends TypeNode {
@@ -2720,7 +2713,6 @@ namespace ts {
         /* @internal */
         ContainsAnyFunctionType = 1 << 23,  // Type is or contains object literal type
         Spread                  = 1 << 24,  // Spread types
-        Difference              = 1 << 25,  // Rest types
 
         /* @internal */
         Nullable = Undefined | Null,
@@ -2861,12 +2853,7 @@ namespace ts {
     /* @internal */
     export interface SpreadType extends Type {
         left: SpreadType | ResolvedType;
-        right: TypeParameter | IntersectionType | IndexType | IndexedAccessType | DifferenceType | ResolvedType;
-    }
-
-    export interface DifferenceType extends Type {
-        source: Type;
-        properties: PropertyName[];
+        right: TypeParameter | IntersectionType | IndexType | IndexedAccessType | ResolvedType;
     }
 
     /* @internal */
