@@ -3361,8 +3361,8 @@ namespace ts {
             let hasComputedProperties = false;
             forEach(pattern.elements, e => {
                 const name = e.propertyName || <Identifier>e.name;
-                if (isComputedNonLiteralName(name)) {
-                    // do not include computed properties in the implied type
+                if (isComputedNonLiteralName(name) || e.dotDotDotToken) {
+                    // do not include computed properties or rests in the implied type
                     hasComputedProperties = true;
                     return;
                 }
@@ -4649,7 +4649,7 @@ namespace ts {
         function getApparentType(type: Type): Type {
             let t = type.flags & TypeFlags.TypeParameter ? getApparentTypeOfTypeParameter(<TypeParameter>type) : type;
             t = t.flags & TypeFlags.Spread ? getApparentTypeOfSpread(type as SpreadType) : t;
-            t = t.flags & TypeFlags.Difference ? getApparentTypeOfDifference(type as DifferenceType): t;
+            t = t.flags & TypeFlags.Difference ? getApparentTypeOfDifference(type as DifferenceType) : t;
             return t.flags & TypeFlags.StringLike ? globalStringType :
                 t.flags & TypeFlags.NumberLike ? globalNumberType :
                 t.flags & TypeFlags.BooleanLike ? globalBooleanType :
