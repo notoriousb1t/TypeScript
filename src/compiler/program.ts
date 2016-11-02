@@ -239,11 +239,11 @@ namespace ts {
                 const { line, character } = getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start);
                 const fileName = diagnostic.file.fileName;
                 const relativeFileName = convertToRelativePath(fileName, host.getCurrentDirectory(), fileName => host.getCanonicalFileName(fileName));
-                output += `${relativeFileName}(${line + 1},${character + 1}): `;
+                output += `${ relativeFileName }(${ line + 1 },${ character + 1 }): `;
             }
 
             const category = DiagnosticCategory[diagnostic.category].toLowerCase();
-            output += `${category} TS${diagnostic.code}: ${flattenDiagnosticMessageText(diagnostic.messageText, host.getNewLine())}${host.getNewLine()}`;
+            output += `${ category } TS${ diagnostic.code }: ${ flattenDiagnosticMessageText(diagnostic.messageText, host.getNewLine()) }${ host.getNewLine() }`;
         }
         return output;
     }

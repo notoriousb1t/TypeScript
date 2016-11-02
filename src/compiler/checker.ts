@@ -111,7 +111,7 @@ namespace ts {
             tryFindAmbientModuleWithoutAugmentations: moduleName => {
                 // we deliberately exclude augmentations
                 // since we are only interested in declarations of the module itself
-                return tryFindAmbientModule(moduleName, /*withAugmentations*/ false); 
+                return tryFindAmbientModule(moduleName, /*withAugmentations*/ false);
             }
         };
 
@@ -1379,14 +1379,6 @@ namespace ts {
                 return ambientModule;
             }
             const isRelative = isExternalModuleNameRelative(moduleName);
-            const quotedName = '"' + moduleName + '"';
-            if (!isRelative) {
-                const symbol = getSymbol(globals, quotedName, SymbolFlags.ValueModule);
-                if (symbol) {
-                    return getMergedSymbol(symbol);
-                }
-            }
-
             const resolvedModule = getResolvedModule(getSourceFileOfNode(location), moduleReference);
             const resolutionDiagnostic = resolvedModule && getResolutionDiagnostic(compilerOptions, resolvedModule);
             const sourceFile = resolvedModule && !resolutionDiagnostic && host.getSourceFile(resolvedModule.resolvedFileName);
