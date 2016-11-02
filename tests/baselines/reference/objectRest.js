@@ -19,6 +19,19 @@ var { x: { ka, ...nested }, y: other, ...rest } = complex;
 var { x, ...fresh } = { x: 1, y: 2 };
 ({ x, ...fresh } = { x: 1, y: 2 });
 
+class Removable {
+    private x: number;
+    protected y: number;
+    set z(value: number) { }
+    get both(): number { return 12 }
+    set both(value: number) { }
+    m() { }
+    removed: string;
+    remainder: string;
+}
+var removable = new Removable();
+var { removed, ...removableRest } = removable;
+
 
 //// [objectRest.js]
 var __rest = (this && this.__rest) || function (s, e) {
@@ -43,4 +56,12 @@ var _c = complex.x, { ka } = _c, nested = __rest(_c, ["ka"]), { y: other } = com
 (_d = complex.x, { ka } = _d, nested = __rest(_d, ["ka"]), { y: other } = complex, rest = __rest(complex, ["x", "y"]), complex);
 var _e = { x: 1, y: 2 }, { x } = _e, fresh = __rest(_e, ["x"]);
 (_f = { x: 1, y: 2 }, { x } = _f, fresh = __rest(_f, ["x"]), _f);
+class Removable {
+    set z(value) { }
+    get both() { return 12; }
+    set both(value) { }
+    m() { }
+}
+var removable = new Removable();
+var { removed } = removable, removableRest = __rest(removable, ["removed"]);
 var _d, _f;

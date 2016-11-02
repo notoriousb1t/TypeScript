@@ -18,3 +18,16 @@ var { x: { ka, ...nested }, y: other, ...rest } = complex;
 ({x: { ka, ...nested }, y: other, ...rest} = complex);
 var { x, ...fresh } = { x: 1, y: 2 };
 ({ x, ...fresh } = { x: 1, y: 2 });
+
+class Removable {
+    private x: number;
+    protected y: number;
+    set z(value: number) { }
+    get both(): number { return 12 }
+    set both(value: number) { }
+    m() { }
+    removed: string;
+    remainder: string;
+}
+var removable = new Removable();
+var { removed, ...removableRest } = removable;
