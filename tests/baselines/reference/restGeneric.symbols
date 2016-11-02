@@ -1,0 +1,99 @@
+=== tests/cases/conformance/types/rest/restGeneric.ts ===
+interface Gen {
+>Gen : Symbol(Gen, Decl(restGeneric.ts, 0, 0))
+
+    x: number;
+>x : Symbol(Gen.x, Decl(restGeneric.ts, 0, 15))
+}
+interface Gen2 {
+>Gen2 : Symbol(Gen2, Decl(restGeneric.ts, 2, 1))
+
+    parent: Gen;
+>parent : Symbol(Gen2.parent, Decl(restGeneric.ts, 3, 16))
+>Gen : Symbol(Gen, Decl(restGeneric.ts, 0, 0))
+
+    millenial: string;
+>millenial : Symbol(Gen2.millenial, Decl(restGeneric.ts, 4, 16))
+}
+function cloneAgain<T extends Gen & Gen2>(t: T): T - (x) {
+>cloneAgain : Symbol(cloneAgain, Decl(restGeneric.ts, 6, 1))
+>T : Symbol(T, Decl(restGeneric.ts, 7, 20))
+>Gen : Symbol(Gen, Decl(restGeneric.ts, 0, 0))
+>Gen2 : Symbol(Gen2, Decl(restGeneric.ts, 2, 1))
+>t : Symbol(t, Decl(restGeneric.ts, 7, 42))
+>T : Symbol(T, Decl(restGeneric.ts, 7, 20))
+>T : Symbol(T, Decl(restGeneric.ts, 7, 20))
+
+    // declarations with generics create difference types
+    let rest: T - (x);
+>rest : Symbol(rest, Decl(restGeneric.ts, 9, 7))
+>T : Symbol(T, Decl(restGeneric.ts, 7, 20))
+
+    let rest1: T - (x) - (parent, millenial);
+>rest1 : Symbol(rest1, Decl(restGeneric.ts, 10, 7))
+>T : Symbol(T, Decl(restGeneric.ts, 7, 20))
+
+    var { x, parent, ...rest2 } = t;
+>x : Symbol(x, Decl(restGeneric.ts, 11, 9))
+>parent : Symbol(parent, Decl(restGeneric.ts, 11, 12))
+>rest2 : Symbol(rest2, Decl(restGeneric.ts, 11, 20))
+>t : Symbol(t, Decl(restGeneric.ts, 7, 42))
+
+    // apparent types distribute the intersection constraint correctly
+    rest.parent;
+>rest.parent : Symbol(Gen2.parent, Decl(restGeneric.ts, 3, 16))
+>rest : Symbol(rest, Decl(restGeneric.ts, 9, 7))
+>parent : Symbol(Gen2.parent, Decl(restGeneric.ts, 3, 16))
+
+    rest.millenial;
+>rest.millenial : Symbol(Gen2.millenial, Decl(restGeneric.ts, 4, 16))
+>rest : Symbol(rest, Decl(restGeneric.ts, 9, 7))
+>millenial : Symbol(Gen2.millenial, Decl(restGeneric.ts, 4, 16))
+
+    rest2.millenial;
+>rest2.millenial : Symbol(Gen2.millenial, Decl(restGeneric.ts, 4, 16))
+>rest2 : Symbol(rest2, Decl(restGeneric.ts, 11, 20))
+>millenial : Symbol(Gen2.millenial, Decl(restGeneric.ts, 4, 16))
+
+    ({ x, parent, ...rest2 } = t);
+>x : Symbol(x, Decl(restGeneric.ts, 16, 6))
+>parent : Symbol(parent, Decl(restGeneric.ts, 16, 9))
+>t : Symbol(t, Decl(restGeneric.ts, 7, 42))
+
+    return rest2; // TODO: T - (x, parent) shouldn't be assignable to T - (x)
+>rest2 : Symbol(rest2, Decl(restGeneric.ts, 11, 20))
+}
+interface Gen3 extends Gen2 {
+>Gen3 : Symbol(Gen3, Decl(restGeneric.ts, 18, 1))
+>Gen2 : Symbol(Gen2, Decl(restGeneric.ts, 2, 1))
+
+    x: number;
+>x : Symbol(Gen3.x, Decl(restGeneric.ts, 19, 29))
+
+    w: boolean;
+>w : Symbol(Gen3.w, Decl(restGeneric.ts, 20, 14))
+}
+let gen3: Gen3;
+>gen3 : Symbol(gen3, Decl(restGeneric.ts, 23, 3))
+>Gen3 : Symbol(Gen3, Decl(restGeneric.ts, 18, 1))
+
+let rested = cloneAgain(gen3);
+>rested : Symbol(rested, Decl(restGeneric.ts, 24, 3))
+>cloneAgain : Symbol(cloneAgain, Decl(restGeneric.ts, 6, 1))
+>gen3 : Symbol(gen3, Decl(restGeneric.ts, 23, 3))
+
+rested.parent;
+>rested.parent : Symbol(Gen2.parent, Decl(restGeneric.ts, 3, 16))
+>rested : Symbol(rested, Decl(restGeneric.ts, 24, 3))
+>parent : Symbol(Gen2.parent, Decl(restGeneric.ts, 3, 16))
+
+rested.millenial;
+>rested.millenial : Symbol(Gen2.millenial, Decl(restGeneric.ts, 4, 16))
+>rested : Symbol(rested, Decl(restGeneric.ts, 24, 3))
+>millenial : Symbol(Gen2.millenial, Decl(restGeneric.ts, 4, 16))
+
+rested.w;
+>rested.w : Symbol(Gen3.w, Decl(restGeneric.ts, 20, 14))
+>rested : Symbol(rested, Decl(restGeneric.ts, 24, 3))
+>w : Symbol(Gen3.w, Decl(restGeneric.ts, 20, 14))
+

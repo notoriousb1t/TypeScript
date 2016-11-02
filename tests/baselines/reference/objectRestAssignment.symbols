@@ -1,4 +1,4 @@
-=== tests/cases/conformance/types/difference/objectRestAssignment.ts ===
+=== tests/cases/conformance/types/rest/objectRestAssignment.ts ===
 let x;
 >x : Symbol(x, Decl(objectRestAssignment.ts, 0, 3))
 

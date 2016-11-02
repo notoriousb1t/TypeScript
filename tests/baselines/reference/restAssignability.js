@@ -1,4 +1,4 @@
-//// [differenceAssignability.ts]
+//// [restAssignability.ts]
 interface Gen {
     x: number;
 }
@@ -28,7 +28,7 @@ function cloneAgain<T extends Gen & Gen2>(t: T): T - ( x ) {
 }
 
 
-//// [differenceAssignability.js]
+//// [restAssignability.js]
 var __rest = (this && this.__rest) || function (s, e) {
     var t = {};
     for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && !e.indexOf(p))

@@ -1,4 +1,4 @@
-=== tests/cases/conformance/types/difference/differenceGeneric.ts ===
+=== tests/cases/conformance/types/rest/restGeneric.ts ===
 interface Gen {
 >Gen : Gen
 

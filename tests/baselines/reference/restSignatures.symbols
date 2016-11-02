@@ -1,0 +1,27 @@
+=== tests/cases/conformance/types/rest/restSignatures.ts ===
+interface A { a: number }
+>A : Symbol(A, Decl(restSignatures.ts, 0, 0))
+>a : Symbol(A.a, Decl(restSignatures.ts, 0, 13))
+
+interface Call1 { (): void }
+>Call1 : Symbol(Call1, Decl(restSignatures.ts, 0, 25))
+
+interface Construct1 { new (): void }
+>Construct1 : Symbol(Construct1, Decl(restSignatures.ts, 1, 28))
+
+let nodiffCall: Call1 - ();
+>nodiffCall : Symbol(nodiffCall, Decl(restSignatures.ts, 3, 3))
+>Call1 : Symbol(Call1, Decl(restSignatures.ts, 0, 25))
+
+let noDiffConstruct: Construct1 - ();
+>noDiffConstruct : Symbol(noDiffConstruct, Decl(restSignatures.ts, 4, 3))
+>Construct1 : Symbol(Construct1, Decl(restSignatures.ts, 1, 28))
+
+let noCall: A - (a);
+>noCall : Symbol(noCall, Decl(restSignatures.ts, 5, 3))
+>A : Symbol(A, Decl(restSignatures.ts, 0, 0))
+
+let noConstruct: A - (a);
+>noConstruct : Symbol(noConstruct, Decl(restSignatures.ts, 6, 3))
+>A : Symbol(A, Decl(restSignatures.ts, 0, 0))
+

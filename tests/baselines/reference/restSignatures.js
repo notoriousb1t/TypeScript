@@ -1,4 +1,4 @@
-//// [differenceSignatures.ts]
+//// [restSignatures.ts]
 interface A { a: number }
 interface Call1 { (): void }
 interface Construct1 { new (): void }
@@ -8,7 +8,7 @@ let noCall: A - (a);
 let noConstruct: A - (a);
 
 
-//// [differenceSignatures.js]
+//// [restSignatures.js]
 var nodiffCall;
 var noDiffConstruct;
 var noCall;
