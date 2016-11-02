@@ -3,6 +3,10 @@ let o = { a: 1, b: 'no' };
 var { ...mustBeLast, a } = o;
 function stillMustBeLast({ ...mustBeLast, a }: { a: number, b: string }): void {
 }
+function generic<T extends { x, y }>(t: T) {
+    let { x, ...rest } = t;
+    return rest;
+}
 
 
 //// [objectRestNegative.js]
@@ -16,4 +20,8 @@ var o = { a: 1, b: 'no' };
 var mustBeLast = o.mustBeLast, a = o.a;
 function stillMustBeLast(_a) {
     var mustBeLast = _a.mustBeLast, a = _a.a;
+}
+function generic(t) {
+    var x = t.x, rest = __rest(t, ["x"]);
+    return rest;
 }

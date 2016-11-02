@@ -1991,6 +1991,10 @@
         "category": "Error",
         "code": 2699
     },
+    "Rest types may only be created from object types.": {
+        "category": "Error",
+        "code": 2700
+    },
 
     "Import declaration '{0}' is using private name '{1}'.": {
         "category": "Error",

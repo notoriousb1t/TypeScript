@@ -3074,6 +3074,10 @@ namespace ts {
             let type: Type;
             if (pattern.kind === SyntaxKind.ObjectBindingPattern) {
                 if (declaration.dotDotDotToken) {
+                    if (!(parentType.flags & TypeFlags.Object)) {
+                        error(declaration, Diagnostics.Rest_types_may_only_be_created_from_object_types);
+                        return unknownType;
+                    }
                     const literalMembers: PropertyName[] = [];
                     for (const element of pattern.elements) {
                         if (element.kind !== SyntaxKind.OmittedExpression && !(element as BindingElement).dotDotDotToken) {
