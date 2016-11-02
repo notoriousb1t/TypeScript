@@ -1,5 +1,4 @@
-=== tests/cases/conformance/types/difference/objectRest.ts ===
-
+=== tests/cases/conformance/types/rest/objectRest.ts ===
 let o = { a: 1, b: 'no' }
 >o : { a: number; b: string; }
 >{ a: 1, b: 'no' } : { a: number; b: string; }
@@ -107,4 +106,25 @@ var { x: { ka, ...nested }, y: other, ...rest } = complex;
 >other : number
 >rest : any
 >complex : { x: { ka: any; ki: any; }; y: number; }
+
+var { x, ...fresh } = { x: 1, y: 2 };
+>x : number
+>fresh : { y: number; }
+>{ x: 1, y: 2 } : { x: number; y: number; }
+>x : number
+>1 : 1
+>y : number
+>2 : 2
+
+({ x, ...fresh } = { x: 1, y: 2 });
+>({ x, ...fresh } = { x: 1, y: 2 }) : { x: number; y: number; }
+>{ x, ...fresh } = { x: 1, y: 2 } : { x: number; y: number; }
+>{ x, ...fresh } : { y: number; x: number; }
+>x : number
+>fresh : any
+>{ x: 1, y: 2 } : { x: number; y: number; }
+>x : number
+>1 : 1
+>y : number
+>2 : 2
 

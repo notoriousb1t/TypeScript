@@ -1,5 +1,4 @@
 // @target: es2015
-
 let o = { a: 1, b: 'no' }
 var { ...clone } = o;
 var { a, ...justB } = o;
@@ -17,3 +16,5 @@ var { x, n1: { y, n2: { z, n3: { ...nr } } }, ...restrest } = nestedrest;
 let complex: { x: { ka, ki }, y: number };
 var { x: { ka, ...nested }, y: other, ...rest } = complex;
 ({x: { ka, ...nested }, y: other, ...rest} = complex);
+var { x, ...fresh } = { x: 1, y: 2 };
+({ x, ...fresh } = { x: 1, y: 2 });

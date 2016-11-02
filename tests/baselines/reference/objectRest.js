@@ -1,5 +1,4 @@
 //// [objectRest.ts]
-
 let o = { a: 1, b: 'no' }
 var { ...clone } = o;
 var { a, ...justB } = o;
@@ -17,6 +16,8 @@ var { x, n1: { y, n2: { z, n3: { ...nr } } }, ...restrest } = nestedrest;
 let complex: { x: { ka, ki }, y: number };
 var { x: { ka, ...nested }, y: other, ...rest } = complex;
 ({x: { ka, ...nested }, y: other, ...rest} = complex);
+var { x, ...fresh } = { x: 1, y: 2 };
+({ x, ...fresh } = { x: 1, y: 2 });
 
 
 //// [objectRest.js]
@@ -40,4 +41,6 @@ var { x } = nestedrest, _a = nestedrest.n1, { y } = _a, _b = _a.n2, { z } = _b, 
 let complex;
 var _c = complex.x, { ka } = _c, nested = __rest(_c, ["ka"]), { y: other } = complex, rest = __rest(complex, ["x", "y"]);
 (_d = complex.x, { ka } = _d, nested = __rest(_d, ["ka"]), { y: other } = complex, rest = __rest(complex, ["x", "y"]), complex);
-var _d;
+var _e = { x: 1, y: 2 }, { x } = _e, fresh = __rest(_e, ["x"]);
+(_f = { x: 1, y: 2 }, { x } = _f, fresh = __rest(_f, ["x"]), _f);
+var _d, _f;
