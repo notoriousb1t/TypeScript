@@ -252,7 +252,6 @@ namespace ts {
             return forStatement;
         }
 
-
         function isRestBindingPattern(initializer: ForInitializer) {
             if (isVariableDeclarationList(initializer)) {
                 const declaration = firstOrUndefined(initializer.declarations);

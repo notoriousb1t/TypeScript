@@ -1926,7 +1926,11 @@ namespace ts {
 
                 case SyntaxKind.SpreadElementExpression:
                 case SyntaxKind.JsxSpreadAttribute:
-                    emitFlags |= NodeFlags.HasSpreadAttribute;
+                    let root = container;
+                    while (root && root.kind !== SyntaxKind.BinaryExpression) {
+                        root = root.parent;
+                    }
+                    emitFlags |= root && isDestructuringAssignment(root) ? NodeFlags.HasRestAttribute : NodeFlags.HasSpreadAttribute;
                     return;
 
                 case SyntaxKind.CallSignature:
