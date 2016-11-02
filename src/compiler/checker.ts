@@ -3086,7 +3086,11 @@ namespace ts {
                     names[getTextOfPropertyName(name)] = true;
                 }
                 for (const prop of getPropertiesOfType(source)) {
-                    if (!(prop.name in names)) {
+                    const inNamesToRemove = prop.name in names;
+                    const isPrivate = getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected);
+                    const isMethod = prop.flags & SymbolFlags.Method;
+                    const isSetOnlyAccessor = prop.flags & SymbolFlags.SetAccessor && !(prop.flags & SymbolFlags.GetAccessor);
+                    if (!inNamesToRemove && !isPrivate && !isMethod && !isSetOnlyAccessor) {
                         members[prop.name] = prop;
                     }
                 }
