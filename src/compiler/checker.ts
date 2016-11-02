@@ -108,7 +108,11 @@ namespace ts {
             getJsxElementAttributesType,
             getJsxIntrinsicTagNames,
             isOptionalParameter,
-            tryFindAmbientModule: moduleName => tryFindAmbientModule(moduleName, /*withAugmentations*/ false)
+            tryFindAmbientModuleWithoutAugmentations: moduleName => {
+                // we deliberately exclude augmentations
+                // since we are only interested in declarations of the module itself
+                return tryFindAmbientModule(moduleName, /*withAugmentations*/ false); 
+            }
         };
 
         const tupleTypes: GenericType[] = [];

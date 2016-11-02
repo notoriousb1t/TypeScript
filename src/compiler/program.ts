@@ -468,54 +468,76 @@ namespace ts {
             modifiedFilePaths: Path[];
         }
 
-        function resolveModuleNamesInProgram(moduleNames: string[], containingFile: string, file: SourceFile, oldProgramState?: OldProgramState) {
-            // for non-d.ts files or if .d.ts file does not declare any ambient external modules - use default logic
-            if (!oldProgramState && (!isDeclarationFile(file) || !file.ambientModulesInFile.length)) {
+        function resolveModuleNamesReusingOldState(moduleNames: string[], containingFile: string, file: SourceFile, oldProgramState?: OldProgramState) {
+            if (!oldProgramState && !file.ambientModulesInFile.length) {
+                // if old program state is not supplied and file does not contain locally defined ambient modules
+                // then the best we can do is fallback to the default logic
                 return resolveModuleNamesWorker(moduleNames, containingFile);
             }
 
-            // a list of unknown modules names to be passed as an argument to resolveModuleNamesWorker
-            // this might be a different list from original moduleNames if some items from moduleNames can be
-            // resolved as local ambient modules
+            // at this point we know that either 
+            // - file has local declarations for ambient modules
+            // OR
+            // - old program state is available
+            // OR
+            // - both of items above
+            // With this it is possible that we can tell how some module names from the initial list will be resolved
+            // without doing actual resolution (in particular if some name was resolved to ambient module).
+            // Such names should be excluded from the list of module names that will be provided to `resolveModuleNamesWorker`
+            // since we don't want to resolve them again.
+
+            // this is a list of modules for which we cannot predict resolution so they should be actually resolved
             let unknownModuleNames: string[];
-            // a result list that will contain combined data from resolveModuleNamesWorker and entries for locally found ambient external modules
+            // this is a list of combined results assembles from predicted and resolved results.
+            // Order in this list matches the order in the original list of module names `moduleNames` which is important
+            // so later we can split results to resolutions of modules and resolutions of module augmentations.
             let result: ResolvedModuleFull[];
-            // a transient placeholder that is used to mark known resolution for external module in the result list
-            const knownModuleMarker: ResolvedModuleFull = <any>{};
+            // a transient placeholder that is used to mark predicted resolution in the result list
+            const predictedToResolveToAmbientModuleMarker: ResolvedModuleFull = <any>{};
 
             for (let i = 0; i < moduleNames.length; i++) {
                 const moduleName = moduleNames[i];
-                const isKnownResolution =
-                    (isDeclarationFile(file) && contains(file.ambientModulesInFile, moduleName)) ||
+                // module name is known to be resolved to ambient module if
+                // - module name is contained in the list of ambient modules that are locally declared in the file
+                // - in the old program module name was resolved to ambient module whose declaration is in non-modified file
+                //   (so the same module declaration will land in the new program)
+                const isKnownToResolveToAmbientModule =
+                    contains(file.ambientModulesInFile, moduleName) ||
                     isModuleNameResolvedToAmbientModuleInNonModifiedFile(moduleName, oldProgramState);
 
-                if (isKnownResolution) {
-                    // found first module which we know how to resolve upfron
-                    // this means that if we'll need to make request to resolveModuleNamesWorker we'll need to put unknown modules into the separate list
-                    // copy all modules that we've seen before to a separate list
+                if (isKnownToResolveToAmbientModule) {
                     if (!unknownModuleNames) {
-                        unknownModuleNames = moduleNames.slice(0, i);
+                        // found a first module name for which result can be prediced
+                        // this means that this module name should not be passed to `resolveModuleNamesWorker`.
+                        // We'll use a separate list for module names that are definitely unknown.
                         result = new Array(moduleNames.length);
+                        // copy all module names that appear before the current one in the list
+                        // since they are known to be unknown
+                        unknownModuleNames = moduleNames.slice(0, i);
                     }
-                    // set the marker for the known modules
-                    result[i] = knownModuleMarker;
+                    // mark prediced resolution in the result list
+                    result[i] = predictedToResolveToAmbientModuleMarker;
                 }
                 else if (unknownModuleNames) {
-                    // push unknown module name to the list of arguments to resolveModuleNamesWorker
+                    // found unknown module name and we are already using separate list for those - add it to the list
                     unknownModuleNames.push(moduleName);
                 }
             }
 
             if (!unknownModuleNames) {
-                // we've looked throught the list but have not seen any known resolution
+                // we've looked throught the list but have not seen any predicted resolution
                 // use default logic
                 return resolveModuleNamesWorker(moduleNames, containingFile);
             }
 
-            const resolutions = unknownModuleNames.length ? resolveModuleNamesWorker(unknownModuleNames, containingFile) : emptyArray;
+            const resolutions = unknownModuleNames.length
+                ? resolveModuleNamesWorker(unknownModuleNames, containingFile)
+                : emptyArray;
+
+            // combine results of resolutions and predicted results
             let j = 0;
             for (let i = 0; i < result.length; i++) {
-                if (result[i] == knownModuleMarker) {
+                if (result[i] == predictedToResolveToAmbientModuleMarker) {
                     result[i] = undefined;
                 }
                 else {
@@ -532,9 +554,10 @@ namespace ts {
                 }
                 const resolutionToFile = getResolvedModule(oldProgramState.file, moduleName);
                 if (resolutionToFile) {
+                    // module used to be resolved to file - ignore it
                     return false;
                 }
-                const ambientModule = oldProgram.getTypeChecker().tryFindAmbientModule(moduleName);
+                const ambientModule = oldProgram.getTypeChecker().tryFindAmbientModuleWithoutAugmentations(moduleName);
                 if (!(ambientModule && ambientModule.declarations)) {
                     return false;
                 }
@@ -636,7 +659,7 @@ namespace ts {
                 const newSourceFilePath = getNormalizedAbsolutePath(newSourceFile.fileName, currentDirectory);
                 if (resolveModuleNamesWorker) {
                     const moduleNames = map(concatenate(newSourceFile.imports, newSourceFile.moduleAugmentations), getTextOfLiteral);
-                    const resolutions = resolveModuleNamesInProgram(moduleNames, newSourceFilePath, newSourceFile, { file: oldSourceFile, program: oldProgram, modifiedFilePaths });
+                    const resolutions = resolveModuleNamesReusingOldState(moduleNames, newSourceFilePath, newSourceFile, { file: oldSourceFile, program: oldProgram, modifiedFilePaths });
                     // ensure that module resolution results are still correct
                     const resolutionsChanged = hasChangesInResolutions(moduleNames, resolutions, oldSourceFile.resolvedModules, moduleResolutionIsEqualTo);
                     if (resolutionsChanged) {
@@ -1397,7 +1420,7 @@ namespace ts {
             if (file.imports.length || file.moduleAugmentations.length) {
                 file.resolvedModules = createMap<ResolvedModuleFull>();
                 const moduleNames = map(concatenate(file.imports, file.moduleAugmentations), getTextOfLiteral);
-                const resolutions = resolveModuleNamesInProgram(moduleNames, getNormalizedAbsolutePath(file.fileName, currentDirectory), file);
+                const resolutions = resolveModuleNamesReusingOldState(moduleNames, getNormalizedAbsolutePath(file.fileName, currentDirectory), file);
                 Debug.assert(resolutions.length === moduleNames.length);
                 for (let i = 0; i < moduleNames.length; i++) {
                     const resolution = resolutions[i];

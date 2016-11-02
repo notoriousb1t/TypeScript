@@ -2286,7 +2286,7 @@ namespace ts {
         isOptionalParameter(node: ParameterDeclaration): boolean;
         getAmbientModules(): Symbol[];
 
-        /* @internal */ tryFindAmbientModule(moduleName: string): Symbol;
+        /* @internal */ tryFindAmbientModuleWithoutAugmentations(moduleName: string): Symbol;
 
         // Should not be called directly.  Should only be accessed through the Program instance.
         /* @internal */ getDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): Diagnostic[];
