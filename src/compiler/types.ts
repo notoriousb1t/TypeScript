@@ -3131,7 +3131,8 @@ namespace ts {
     export const enum JsxEmit {
         None = 0,
         Preserve = 1,
-        React = 2
+        React = 2,
+        Local = 3
     }
 
     export const enum NewLineKind {

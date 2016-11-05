@@ -3509,6 +3509,7 @@ declare namespace ts.server.protocol {
         type None = "None";
         type Preserve = "Preserve";
         type React = "React";
+        type Local = "Local";
     }
     type JsxEmit = JsxEmit.None | JsxEmit.Preserve | JsxEmit.React;
     namespace ModuleKind {

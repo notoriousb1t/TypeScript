@@ -112,14 +112,15 @@ namespace ts {
                 objectProperties = singleOrUndefined(segments)
                     || createAssignHelper(currentSourceFile.externalHelpersModuleName, segments);
             }
-
+     
             const element = createReactCreateElement(
                 compilerOptions.reactNamespace,
                 tagName,
                 objectProperties,
                 filter(map(children, transformJsxChildToExpression), isDefined),
                 node,
-                location
+                location,
+                compilerOptions.jsx
             );
 
             if (isChild) {

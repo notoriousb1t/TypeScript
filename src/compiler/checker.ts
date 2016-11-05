@@ -11346,6 +11346,23 @@ namespace ts {
                 }
             }
 
+            // if JSX mode is local, check that createElement is in scope
+            if (compilerOptions.jsx === JsxEmit.Local) {
+                const createElementRefError = Diagnostics.Cannot_find_name_0;
+                const createElementFnName = "createElement";
+                const createElementSym = resolveName(node.tagName, createElementFnName, SymbolFlags.Value, createElementRefError, createElementFnName);
+                if (createElementSym) {
+                    // Mark local symbol as referenced here because it might not have been marked
+                    // if jsx emit was not simple as there wont be error being emitted
+                    createElementSym.isReferenced = true;
+
+                    // If createElement symbol is alias, mark it as refereced
+                    if (createElementSym.flags & SymbolFlags.Alias && !isConstEnumOrConstEnumOnlyModule(resolveAlias(createElementSym))) {
+                        markAliasSymbolAsReferenced(createElementSym);
+                    }
+                }
+            }
+
             const targetAttributesType = getJsxElementAttributesType(node);
 
             const nameTable = createMap<boolean>();

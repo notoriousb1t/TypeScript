@@ -67,7 +67,8 @@ namespace ts {
             name: "jsx",
             type: createMap({
                 "preserve": JsxEmit.Preserve,
-                "react": JsxEmit.React
+                "react": JsxEmit.React,
+                "local": JsxEmit.Local
             }),
             paramType: Diagnostics.KIND,
             description: Diagnostics.Specify_JSX_code_generation_Colon_preserve_or_react,

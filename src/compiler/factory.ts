@@ -1628,7 +1628,19 @@ namespace ts {
         return react;
     }
 
-    export function createReactCreateElement(reactNamespace: string, tagName: Expression, props: Expression, children: Expression[], parentElement: JsxOpeningLikeElement, location: TextRange): LeftHandSideExpression {
+    function createSynthCreateElement(parent: JsxOpeningLikeElement) {
+        // To ensure the emit resolver can properly resolve the namespace, we need to
+        // treat this identifier as if it were a source tree node by clearing the `Synthesized`
+        // flag and setting a parent node.
+        const react = createIdentifier("createElement");
+        react.flags &= ~NodeFlags.Synthesized;
+        // Set the parent that is in parse tree 
+        // this makes sure that parent chain is intact for checker to traverse complete scope tree
+        react.parent = getParseTreeNode(parent);
+        return react;
+    }
+
+    export function createReactCreateElement(reactNamespace: string, tagName: Expression, props: Expression, children: Expression[], parentElement: JsxOpeningLikeElement, location: TextRange, jsxEmit: JsxEmit): LeftHandSideExpression {
         const argumentsList = [tagName];
         if (props) {
             argumentsList.push(props);
@@ -1650,12 +1662,20 @@ namespace ts {
             }
         }
 
+        if (jsxEmit === JsxEmit.Local) {
+            return createCall(
+                createSynthCreateElement(parentElement),
+                /*typeArguments*/ undefined,
+                argumentsList,
+                location);
+        }
+
         return createCall(
             createPropertyAccess(
                 createReactNamespace(reactNamespace, parentElement),
                 "createElement"
             ),
-            /*typeArguments*/ undefined,
+                /*typeArguments*/ undefined,
             argumentsList,
             location
         );
